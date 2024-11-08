@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class Home extends Controller
 {
     public function index(){
-        return view('tes_grafik', ['title' => 'Home']);
+        return view('home', ['title' => 'Home']);
     }
     public function tes_grafik(){
         $traffic = new Traffic();
