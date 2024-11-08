@@ -26,6 +26,6 @@ Route::post('/kendaraan/tambah', [Kendaraan::class, 'tambah_kendaraan'])->name('
 Route::get('/jalan', [Jalan::class, 'index'])->name('jalan');
 Route::post('/jalan/tambah', [Jalan::class, 'tambah_jalan'])->name('tambah_jalan');
 Route::get('/reactor', function () {
-    return inertia('Home');
+    return inertia('Components/Admin');
 });
 Route::get('/tes', [Home::class, 'tes_grafik']);
