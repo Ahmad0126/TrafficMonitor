@@ -26,7 +26,7 @@ class TrafficFactory extends Factory
             'id_jenis' => $kendaraan->id,
             'id_ruas' => $jalan->id,
             'kecepatan' => fake()->randomNumber(2, true),
-            'tanggal' => fake()->dateTimeBetween('-4 years')->format('Y-m-d H:i:s'),
+            'tanggal' => fake()->dateTimeBetween('-10 months')->format('Y-m-d H:i:s'),
         ];
     }
 }

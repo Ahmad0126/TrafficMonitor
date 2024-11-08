@@ -28,3 +28,4 @@ Route::post('/jalan/tambah', [Jalan::class, 'tambah_jalan'])->name('tambah_jalan
 Route::get('/reactor', function () {
     return inertia('Home');
 });
+Route::get('/tes', [Home::class, 'tes_grafik']);
