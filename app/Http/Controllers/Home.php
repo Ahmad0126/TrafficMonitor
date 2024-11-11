@@ -9,16 +9,39 @@ use Illuminate\Http\Request;
 
 class Home extends Controller
 {
-    public function index(){
-        return view('tes_grafik', ['title' => 'Home']);
+    public function index(Request $req){
+        $traffic = new Traffic();
+        
+        switch ($req->period) {
+            case 'today':
+                $data['volume'] = $traffic->get_traffic_today();
+                $data['kendaraan'] = $traffic->get_kendaraan_today();
+                break;
+            case 'week':
+                $data['volume'] = $traffic->get_traffic_this_week();
+                $data['kendaraan'] = $traffic->get_kendaraan_this_week();
+                break;
+            case 'month':
+                $data['volume'] = $traffic->get_traffic_this_month();
+                $data['kendaraan'] = $traffic->get_kendaraan_this_month();
+                break;
+            default:
+                $data['volume'] = $traffic->get_traffic_this_year();
+                $data['kendaraan'] = $traffic->get_kendaraan_this_year();
+                break;
+        }
+        
+        $data['title'] = 'Home';
+        $data['period'] = $req->period;
+        return view('tes_grafik', $data);
     }
     public function tes_grafik(){
         $traffic = new Traffic();
-        dd(
-            $traffic->get_traffic_this_year(), 
-            $traffic->get_traffic_this_month(), 
-            $traffic->get_traffic_this_week(), 
-            $traffic->get_traffic_today(),
+        ddd(
+            $traffic->get_kendaraan_this_year(), 
+            $traffic->get_kendaraan_this_month(), 
+            $traffic->get_kendaraan_this_week(), 
+            $traffic->get_kendaraan_today(),
         );
     }
 }
