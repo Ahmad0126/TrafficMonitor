@@ -3,22 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Traffic;
-use DatePeriod;
-use DateTime;
 use Illuminate\Http\Request;
 
 class Home extends Controller
 {
-    public function index(){
-        return view('home', ['title' => 'Home']);
+    public function index(Request $req){
+        $traffic = new Traffic();
+        
+        $data['volume'] = $traffic->get_traffic_in_period($req->period);
+        $data['kendaraan'] = $traffic->get_kendaraan_in_period($req->period);
+        $data['kecepatan'] = $traffic->get_kecepatan_in_period($req->period);
+        $data['rata2'] = $traffic->get_rata2_kecepatan($req->period);
+        $data['title'] = 'Home';
+        $data['period'] = $req->period;
+        return view('tes_grafik', $data);
     }
     public function tes_grafik(){
         $traffic = new Traffic();
-        dd(
-            $traffic->get_traffic_this_year(), 
-            $traffic->get_traffic_this_month(), 
-            $traffic->get_traffic_this_week(), 
-            $traffic->get_traffic_today(),
+        ddd(
+            $traffic->get_kecepatan_this_year(), 
+            $traffic->get_kecepatan_this_month(), 
+            $traffic->get_kecepatan_this_week(), 
+            $traffic->get_kecepatan_today(),
         );
     }
 }

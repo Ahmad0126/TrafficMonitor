@@ -19,108 +19,175 @@ class Traffic extends Model
     public function jalan():BelongsTo{
         return $this->belongsTo(Jalan::class, 'id_ruas');
     }
-    public function get_traffic_today(){
-        $start = new DateTime('00:00:00');
-        $end = new DateTime('23:59:59');
-        
-        $query = DB::table($this->table)
-            ->selectRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H:00:00') AS tanggal, COUNT(*) AS jumlah")
-            ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
-            ->groupByRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H')")
-            ->get();
 
+    private function _get_period($period){
+        $end = new DateTime('23:59:59');
+        switch ($period) {
+            case 'today':
+                $start = new DateTime('00:00:00');
+                break;
+            case 'week':
+                $start = new DateTime(date('Y-m-d 00:00:00', strtotime('-1 week', $end->getTimestamp())));
+                break;
+            case 'month':
+                $start = new DateTime(date('Y-m-d 00:00:00', strtotime('-1 month', $end->getTimestamp())));
+                break;
+            default:
+                $start = new DateTime(date('Y-m-d 00:00:00', strtotime('-1 year', $end->getTimestamp())));
+                break;
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
+    public function get_traffic_in_period($period){
+        $date = $this->_get_period($period);
+        $start = $date['start'];
+        $end = $date['end'];
+
+        switch ($period) {
+            case 'today':
+                $query = DB::table($this->table)
+                    ->selectRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H:00:00') AS tanggal, COUNT(*) AS jumlah")
+                    ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->groupByRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H')")
+                    ->get();
+                $format = 'H:00';
+                $increment = '+1 hour';
+                break;
+            case 'week':
+                $query = DB::table($this->table)
+                    ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
+                    ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->groupByRaw("DATE(tanggal)")
+                    ->get();
+                $format = 'd M';
+                $increment = '+1 day';
+                break;
+            case 'month':
+                $query = DB::table($this->table)
+                    ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
+                    ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->groupByRaw("DATE(tanggal)")
+                    ->get();
+                $format = 'd M';
+                $increment = '+1 day';
+                break;
+            default:
+                $query = DB::table($this->table)
+                    ->selectRaw("DATE_FORMAT(`tanggal`, '%Y-%m-01') AS tanggal, COUNT(*) AS jumlah")
+                    ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->groupByRaw("DATE_FORMAT(`tanggal`, '%Y-%m')")
+                    ->get();
+                $format = 'M Y';
+                $increment = '+1 month';
+                break;
+        }
+
+        return $this->_collect($query, $start, $end, $format, $increment);
+    }
+    public function get_kendaraan_in_period($period){
+        $date = $this->_get_period($period);
+        return $this->_get_kendaraan_in_period($date['start'], $date['end']);
+    }
+    public function get_kecepatan_in_period($period){
+        $date = $this->_get_period($period);
+        return $this->_get_kecepatan_in_period($date['start'], $date['end']);
+    }
+    public function get_rata2_kecepatan($period){
+        $date = $this->_get_period($period);
+        return $this->_get_rata2_kecepatan($date['start'], $date['end']);
+    }
+
+    private function _collect($query, $start, $end, $format, $increment){
         $data = [];
         foreach ($query as $d) {
-            $jam = date('H:00', strtotime($d->tanggal));
+            $jam = date($format, strtotime($d->tanggal));
             $data[$jam] = $d->jumlah;
         }
 
         $result = [];
         $current_date = clone $start;
         while ($current_date <= $end) {
-            $tanggal = $current_date->format('H:00');
+            $tanggal = $current_date->format($format);
             $result[$tanggal] = $data[$tanggal] ?? 0;  // Jika tanggal tidak ada di $data, set ke 0
-            $current_date->modify('+1 hour');
+            $current_date->modify($increment);
         }
 
         return $result;
     }
-    public function get_traffic_this_week(){
-        $end = new DateTime('00:00:00');
-        $start = new DateTime(date('Y-m-d 23:59:59', strtotime('-1 week', $end->getTimestamp())));
-        
-        $query = DB::table($this->table)
-            ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
-            ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
-            ->groupByRaw("DATE(tanggal)")
+    private function _get_kendaraan_in_period($start, $end){
+        $query = DB::table('jenis_kendaraan', 'jk')
+            ->selectRaw("jk.jenis, COALESCE(COUNT(t.id), 0) AS jumlah")
+            ->leftJoin(
+                DB::raw($this->table." t"), 
+                'jk.id', '=', 
+                DB::raw("t.id_jenis AND t.tanggal BETWEEN '"
+                    .$start->format('Y-m-d H:i:s')."' AND '"
+                    .$end->format('Y-m-d H:i:s')."'"
+                )
+            )
+            ->groupByRaw("jk.id")
             ->get();
         
-        $data = [];
+        $jumlah = 0;
         foreach ($query as $d) {
-            $day = date('d M', strtotime($d->tanggal));
-            $data[$day] = $d->jumlah;
+            $jumlah += $d->jumlah;
         }
 
         $result = [];
-        $current_date = clone $start;
-        while ($current_date <= $end) {
-            $tanggal = $current_date->format('d M');
-            $result[$tanggal] = $data[$tanggal] ?? 0;  // Jika tanggal tidak ada di $data, set ke 0
-            $current_date->modify('+1 day');
+        foreach ($query as $d) {
+            if($jumlah == 0){ $presentase = 0; }
+            else{ $presentase = $d->jumlah / $jumlah * 100; }
+
+            $result[$d->jenis] = round($presentase, 2);
         }
 
         return $result;
     }
-    public function get_traffic_this_month(){
-        $end = new DateTime('00:00:00');
-        $start = new DateTime(date('Y-m-d 23:59:59', strtotime('-1 month', $end->getTimestamp())));
-        
+    private function _get_kecepatan_in_period($start, $end){
+        $kriteria_kecepatan = [
+            '<20' => 20,
+            '>20' => 20,
+            '>30' => 30,
+            '>40' => 40,
+            '>50' => 50,
+            '>60' => 60,
+            '>70' => 70,
+            '>80' => 80,
+        ];
+
         $query = DB::table($this->table)
-            ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
+            ->select("kecepatan")
             ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
-            ->groupByRaw("DATE(tanggal)")
             ->get();
 
-        $data = [];
+        $result = array_fill_keys(array_keys($kriteria_kecepatan), 0);
         foreach ($query as $d) {
-            $day = date('d M', strtotime($d->tanggal));
-            $data[$day] = $d->jumlah;
-        }
+            $n = 1;
+            foreach ($kriteria_kecepatan as $kriteria => $batas) {
+                if($n == count($kriteria_kecepatan)){
+                    $kurang_dari = true;
+                }else{
+                    $kurang_dari = $d->kecepatan <= ($batas + 10);
+                }
 
-        $result = [];
-        $current_date = clone $start;
-        while ($current_date <= $end) {
-            $tanggal = $current_date->format('d M');
-            $result[$tanggal] = $data[$tanggal] ?? 0;  // Jika tanggal tidak ada di $data, set ke 0
-            $current_date->modify('+1 day');
+                if (($kriteria[0] === '<' && $d->kecepatan <= $batas) ||
+                    ($kriteria[0] === '>' && $d->kecepatan > $batas && $kurang_dari)) {
+                    $result[$kriteria]++;
+                }
+                $n++;
+            }
         }
 
         return $result;
     }
-    public function get_traffic_this_year(){
-        $end = new DateTime('00:00:00');
-        $start = new DateTime(date('Y-m-d 23:59:59', strtotime('-1 year', $end->getTimestamp())));
-        
+    private function _get_rata2_kecepatan($start, $end){
         $query = DB::table($this->table)
-            ->selectRaw("DATE_FORMAT(`tanggal`, '%Y-%m-01') AS tanggal, COUNT(*) AS jumlah")
+            ->selectRaw("AVG(kecepatan) as speed")
             ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
-            ->groupByRaw("DATE_FORMAT(`tanggal`, '%Y-%m')")
-            ->get();
+            ->limit(1)
+            ->get()->first();
 
-        $data = [];
-        foreach ($query as $d) {
-            $bulan = date('M Y', strtotime($d->tanggal));
-            $data[$bulan] = $d->jumlah;
-        }
-
-        $result = [];
-        $current_date = clone $start;
-        while ($current_date <= $end) {
-            $tanggal = $current_date->format('M Y');
-            $result[$tanggal] = $data[$tanggal] ?? 0;  // Jika tanggal tidak ada di $data, set ke 0
-            $current_date->modify('+1 month');
-        }
-
-        return $result;
+        return $query->speed;
     }
 }
