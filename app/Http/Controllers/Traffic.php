@@ -14,6 +14,14 @@ class Traffic extends Controller
         $data['kendaraan'] = Kendaraan::all();
         $data['jalan'] = Jalan::all();
         $data['traffic'] = TrafficModel::paginate(25);
+        $data['old'] = [
+            'id_jenis' => null,
+            'id_ruas' => null,
+            'tanggal1' => null,
+            'tanggal2' => null,
+            'logic_speed' => null,
+            'kecepatan' => null
+        ];;
         return view('traffic', $data);
     }
     public function filter(Request $req){
@@ -54,6 +62,7 @@ class Traffic extends Controller
             'kecepatan' => $req->kecepatan
         ];
         $data['traffic'] = $traffic->paginate(25)->appends($query);
+        $data['old'] = $query;
         return view('traffic', $data);
     }
 }
