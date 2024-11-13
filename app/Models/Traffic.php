@@ -6,6 +6,7 @@ use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class Traffic extends Model
@@ -20,11 +21,11 @@ class Traffic extends Model
         return $this->belongsTo(Jalan::class, 'id_ruas');
     }
 
-    private function _get_period($period){
-        $end = new DateTime('23:59:59');
+    private function _get_period($period, $end_date = null){
+        $end = new DateTime($end_date.'23:59:59');
         switch ($period) {
             case 'today':
-                $start = new DateTime('00:00:00');
+                $start = new DateTime($end_date.'00:00:00');
                 break;
             case 'week':
                 $start = new DateTime(date('Y-m-d 00:00:00', strtotime('-1 week', $end->getTimestamp())));
@@ -39,16 +40,39 @@ class Traffic extends Model
         return ['start' => $start, 'end' => $end];
     }
 
-    public function get_traffic_in_period($period){
-        $date = $this->_get_period($period);
+    public function get_title_traffic($period, $end_date){
+        $date = $this->_get_period($period, $end_date);
         $start = $date['start'];
         $end = $date['end'];
+        $title = 'Data Traffic Tanggal ';
+        switch ($period) {
+            case 'today':
+                $title = $end->format('j F Y');
+                break;
+            case 'week':
+                $title = $start->format('j F Y').' sampai '.$end->format('j F Y');
+                break;
+            case 'month':
+                $title = $start->format('j F Y').' sampai '.$end->format('j F Y');
+                break;
+            default:
+                $title = $start->format('j F Y').' sampai '.$end->format('j F Y');
+                break;
+        }
+        return $title;
+    }
+    public function get_traffic_in_period($period, $end_date = null, $filter = ""){
+        $date = $this->_get_period($period, $end_date);
+        $start = $date['start'];
+        $end = $date['end'];
+        if($filter == ""){ $filter = 'true'; }
 
         switch ($period) {
             case 'today':
                 $query = DB::table($this->table)
                     ->selectRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H:00:00') AS tanggal, COUNT(*) AS jumlah")
                     ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->whereRaw($filter)
                     ->groupByRaw("DATE_FORMAT(tanggal, '%Y-%m-%d %H')")
                     ->get();
                 $format = 'H:00';
@@ -58,6 +82,7 @@ class Traffic extends Model
                 $query = DB::table($this->table)
                     ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
                     ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->whereRaw($filter)
                     ->groupByRaw("DATE(tanggal)")
                     ->get();
                 $format = 'd M';
@@ -67,6 +92,7 @@ class Traffic extends Model
                 $query = DB::table($this->table)
                     ->selectRaw("DATE(tanggal) AS tanggal, COUNT(*) AS jumlah")
                     ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->whereRaw($filter)
                     ->groupByRaw("DATE(tanggal)")
                     ->get();
                 $format = 'd M';
@@ -76,6 +102,7 @@ class Traffic extends Model
                 $query = DB::table($this->table)
                     ->selectRaw("DATE_FORMAT(`tanggal`, '%Y-%m-01') AS tanggal, COUNT(*) AS jumlah")
                     ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+                    ->whereRaw($filter)
                     ->groupByRaw("DATE_FORMAT(`tanggal`, '%Y-%m')")
                     ->get();
                 $format = 'M Y';
@@ -85,17 +112,17 @@ class Traffic extends Model
 
         return $this->_collect($query, $start, $end, $format, $increment);
     }
-    public function get_kendaraan_in_period($period){
-        $date = $this->_get_period($period);
-        return $this->_get_kendaraan_in_period($date['start'], $date['end']);
+    public function get_kendaraan_in_period($period, $end_date = null, $filter = ""){
+        $date = $this->_get_period($period, $end_date);
+        return $this->_get_kendaraan_in_period($date['start'], $date['end'], $filter);
     }
-    public function get_kecepatan_in_period($period){
-        $date = $this->_get_period($period);
-        return $this->_get_kecepatan_in_period($date['start'], $date['end']);
+    public function get_kecepatan_in_period($period, $end_date = null, $filter = ""){
+        $date = $this->_get_period($period, $end_date);
+        return $this->_get_kecepatan_in_period($date['start'], $date['end'], $filter);
     }
-    public function get_rata2_kecepatan($period){
-        $date = $this->_get_period($period);
-        return $this->_get_rata2_kecepatan($date['start'], $date['end']);
+    public function get_rata2_kecepatan($period, $end_date = null, $filter = ""){
+        $date = $this->_get_period($period, $end_date);
+        return $this->_get_rata2_kecepatan($date['start'], $date['end'], $filter);
     }
 
     private function _collect($query, $start, $end, $format, $increment){
@@ -115,7 +142,8 @@ class Traffic extends Model
 
         return $result;
     }
-    private function _get_kendaraan_in_period($start, $end){
+    private function _get_kendaraan_in_period($start, $end, $filter = ""){
+        if($filter == ""){ $filter = 'true'; }
         $query = DB::table('jenis_kendaraan', 'jk')
             ->selectRaw("jk.jenis, COALESCE(COUNT(t.id), 0) AS jumlah")
             ->leftJoin(
@@ -124,6 +152,7 @@ class Traffic extends Model
                 DB::raw("t.id_jenis AND t.tanggal BETWEEN '"
                     .$start->format('Y-m-d H:i:s')."' AND '"
                     .$end->format('Y-m-d H:i:s')."'"
+                    .($filter != ""? ' AND '.$filter : '')
                 )
             )
             ->groupByRaw("jk.id")
@@ -144,7 +173,8 @@ class Traffic extends Model
 
         return $result;
     }
-    private function _get_kecepatan_in_period($start, $end){
+    private function _get_kecepatan_in_period($start, $end, $filter = ""){
+        if($filter == ""){ $filter = 'true'; }
         $kriteria_kecepatan = [
             '<20' => 20,
             '>20' => 20,
@@ -159,6 +189,7 @@ class Traffic extends Model
         $query = DB::table($this->table)
             ->select("kecepatan")
             ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+            ->whereRaw($filter)
             ->get();
 
         $result = array_fill_keys(array_keys($kriteria_kecepatan), 0);
@@ -181,10 +212,12 @@ class Traffic extends Model
 
         return $result;
     }
-    private function _get_rata2_kecepatan($start, $end){
+    private function _get_rata2_kecepatan($start, $end, $filter = ""){
+        if($filter == ""){ $filter = 'true'; }
         $query = DB::table($this->table)
             ->selectRaw("AVG(kecepatan) as speed")
             ->whereRaw("tanggal BETWEEN '".$start->format('Y-m-d H:i:s')."' AND '".$end->format('Y-m-d H:i:s')."'")
+            ->whereRaw($filter)
             ->limit(1)
             ->get()->first();
 

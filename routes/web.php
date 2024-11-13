@@ -21,6 +21,7 @@ use Inertia\Inertia;
 Route::get('/', [Home::class, 'index'])->name('base');
 Route::get('/traffic', [Traffic::class, 'index'])->name('traffic');
 Route::get('/traffic/filter', [Traffic::class, 'filter'])->name('filter_traffic');
+Route::get('/traffic/graph', [Traffic::class, 'graph'])->name('graph_traffic');
 Route::get('/kendaraan', [Kendaraan::class, 'index'])->name('kendaraan');
 Route::post('/kendaraan/tambah', [Kendaraan::class, 'tambah_kendaraan'])->name('tambah_kendaraan');
 Route::get('/jalan', [Jalan::class, 'index'])->name('jalan');

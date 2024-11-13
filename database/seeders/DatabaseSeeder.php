@@ -20,6 +20,6 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-        Traffic::factory(20)->between('now', '+6 hours')->create();
+        Traffic::factory(35)->between('-1 day', '+6 hours')->create();
     }
 }
