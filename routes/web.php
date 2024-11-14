@@ -20,6 +20,7 @@ use Inertia\Inertia;
 
 Route::get('/', [Home::class, 'index'])->name('base');
 Route::get('/traffic', [Traffic::class, 'index'])->name('traffic');
+Route::get('/traffic2', [Traffic::class, 'show'])->name('traffic2');
 Route::get('/traffic/filter', [Traffic::class, 'filter'])->name('filter_traffic');
 Route::get('/traffic/graph', [Traffic::class, 'graph'])->name('graph_traffic');
 Route::get('/kendaraan', [Kendaraan::class, 'index'])->name('kendaraan');
@@ -28,7 +29,4 @@ Route::post('/kendaraan/edit', [Kendaraan::class, 'edit_kendaraan'])->name('edit
 Route::get('/jalan', [Jalan::class, 'index'])->name('jalan');
 Route::post('/jalan/tambah', [Jalan::class, 'tambah_jalan'])->name('tambah_jalan');
 Route::post('/jalan/edit', [Jalan::class, 'edit_jalan'])->name('edit_jalan');
-Route::get('/reactor', function () {
-    return inertia('Components/Admin');
-});
 Route::get('/tes', [Home::class, 'tes_grafik']);

@@ -21,6 +21,13 @@ class Traffic extends Model
         return $this->belongsTo(Jalan::class, 'id_ruas');
     }
 
+    public static function get_all(){
+        return self::select(['traffic.id', 'traffic.tanggal', 'traffic.kecepatan', 'j.ruas', 'k.jenis'])
+            ->join(DB::raw('jenis_kendaraan k'), 'traffic.id_jenis', '=', 'k.id')
+            ->join(DB::raw('ruas_jalan j'), 'traffic.id_ruas', '=', 'j.id')
+            ->orderByDesc('traffic.tanggal')->paginate(25);
+    }
+
     private function _get_period($period, $end_date = null){
         $end = new DateTime($end_date.'23:59:59');
         switch ($period) {

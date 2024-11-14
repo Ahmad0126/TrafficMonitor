@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Traffic as TrafficResource;
 use App\Models\Jalan;
 use App\Models\Kendaraan;
 use App\Models\Traffic as TrafficModel;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class Traffic extends Controller
 {
@@ -15,6 +17,13 @@ class Traffic extends Controller
         $data['jalan'] = Jalan::all();
         $data['traffic'] = TrafficModel::orderBy('tanggal', 'DESC')->paginate(25);
         return view('traffic', $data);
+    }
+    public function show(){
+        $data['title'] = 'Daftar Traffic';
+        $data['kendaraan'] = Kendaraan::all();
+        $data['jalan'] = Jalan::all();
+        $data['traffic'] = new TrafficResource(TrafficModel::get_all());
+        return Inertia::render('Traffic/Traffic', $data);
     }
     public function filter(Request $req){
         $data['title'] = 'Daftar Traffic';
