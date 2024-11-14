@@ -31,7 +31,7 @@
     </script>
 
     <!--   Core JS Files   -->
-    <script src="{{ asset('assets/js/core/jquery-4.7.1.min.js') }}"></script>
+    <script src="{{ asset('assets/js/core/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
 
@@ -425,6 +425,40 @@ if(count($url) == 4){ $url[4] = 'base'; }
             </footer>
         </div>
     </div>
+    <script>
+        @if ($errors->any())
+            @foreach ($errors->all() as $e)
+                $.notify({
+                    title: 'FAILED',
+                    message: '{{ $e }}',
+                    icon: 'fas fa-exclamation-triangle',
+                }, {
+                    type: 'danger',
+                    placement: {
+                        from: 'top',
+                        align: 'right',
+                    },
+                    time: 1000,
+                    delay: 3000,
+                });
+            @endforeach
+        @endif
+        @if($notif = Session::get('alert'))
+            $.notify({
+                title: 'OK',
+                message: '{{ $notif }}',
+                icon: 'fas fa-check',
+            }, {
+                type: 'success',
+                placement: {
+                    from: 'top',
+                    align: 'right',
+                },
+                time: 1000,
+                delay: 3000,
+            });
+        @endif
+    </script>
 </body>
 
 </html>
