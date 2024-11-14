@@ -16,7 +16,7 @@ class Home extends Controller
         $data['rata2'] = $traffic->get_rata2_kecepatan($req->period);
         $data['title'] = 'Home';
         $data['period'] = $req->period;
-        return view('tes_grafik', $data);
+        return view('home', $data);
     }
     public function tes_grafik(){
         $traffic = new Traffic();

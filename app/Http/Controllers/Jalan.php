@@ -13,10 +13,26 @@ class Jalan extends Controller
         return view('jalan', $data);
     }
     public function tambah_jalan(Request $req){
+        $req->validate([
+            'ruas' => 'required|unique:ruas_jalan,ruas'
+        ]);
+
         $jalan = new JalanModel();
         $jalan->ruas = $req->ruas;
         $jalan->save();
 
-        return redirect(route('jalan'));
+        return redirect(route('jalan'))->with('alert', 'Berhasil menambah jalan');
+    }
+    public function edit_jalan(Request $req){
+        $req->validate([
+            'ruas' => 'required|unique:ruas_jalan,ruas,'.$req->id.',id',
+            'id' => 'required:ruas_jalan,id'
+        ]);
+
+        $jalan = JalanModel::find($req->id);
+        $jalan->ruas = $req->ruas;
+        $jalan->save();
+
+        return redirect(route('jalan'))->with('alert', 'Berhasil mengedit jalan');
     }
 }

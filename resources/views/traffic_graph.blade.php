@@ -1,45 +1,124 @@
 <x-template>
-    <x-slot:title>{{ $title }}</x-slot:title>
+    <x-slot:title>Data Traffic Tanggal {{ $title }}</x-slot:title>
 
     <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
         <div>
-            <h3 class="fw-bold mb-3">Dashboard</h3>
-            <h6 class="op-7 mb-2">Total Traffic di Semua Ruas Jalan</h6>
+            <h3 class="fw-bold mb-1">Data Traffic</h3>
+            <h6 class="op-7 mb-0">{{ $title }}</h6>
         </div>
-        <div class="row ms-md-auto w-100 py-2 py-md-0">
-            <div class="col-sm-6">
-                <div class="card card-stats card-round mb-md-2 mb-0">
+        <div class="ms-md-auto py-2 py-md-0">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#modal_filter" class="btn btn-label-info btn-round me-2">Filter</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card card-stats card-round">
+                <form action="{{ route('graph_traffic') }}" method="get">
                     <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-icon">
-                                <div class="icon-big text-center icon-primary bubble-shadow-small">
-                                    <i class="fas fa-truck-moving"></i>
+                        <div class="row">
+                            <div class="col-sm-6 pb-2">
+                                <label for="">Perhitungan</label>
+                                <select name="period" id="" class="form-control form-select">
+                                    <option @selected($old['period'] == "year") value="year">per bulan selama 1 Tahun</option>
+                                    <option @selected($old['period'] == "month") value="month">per hari selama 30 Hari</option>
+                                    <option @selected($old['period'] == "week") value="week">per hari selama 7 Hari</option>
+                                    <option @selected($old['period'] == "today") value="today">per jam selama 1 Hari</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="">Tanggal Akhir</label>
+                                <div class="input-group">
+                                    <input type="date" name="end_date" id="" class="form-control" value="{{ $old['end_date'] }}">
+                                    <button type="submit" class="btn btn-primary">Ubah</button>
                                 </div>
                             </div>
-                            <div class="col col-stats ms-3 ms-sm-0">
-                                <div class="numbers">
-                                    <p class="card-category">Total kendaraan</p>
-                                    <h4 class="card-title">{{ number_format(array_sum(array_values($volume))) }}</h4>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="modal_filter" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5">Filter</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="form-group col-md-6">
+                                            <label for="">Ruas Jalan</label>
+                                            <select class="form-control form-select" name="id_ruas" id="">
+                                                <option value="">-</option>
+                                                @foreach($jalan as $j)
+                                                <option value="{{ $j->id }}" @isset($old['id_ruas']) {{ $old['id_ruas'] == $j->id ? 'selected' : '' }} @endisset>{{ $j->ruas }} </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="">Jenis Kendaraan</label>
+                                            <select class="form-control form-select" name="id_jenis" id="">
+                                                <option value="">-</option>
+                                                @foreach($jenis as $j)
+                                                <option value="{{ $j->id }}" @isset($old['id_jenis']) {{ $old['id_jenis'] == $j->id ? 'selected' : '' }} @endisset>{{ $j->jenis }} </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="form-group col">
+                                            <label for="kecepatan">Kecepatan</label>
+                                            <div class="input-group">
+                                                <select class="form-control form-select" name="logic_speed" id="">
+                                                    <option @isset($old['logic_speed']) {{ $old['logic_speed'] == '=' ? 'selected' : '' }} @endisset value="=">=</option>
+                                                    <option @isset($old['logic_speed']) {{ $old['logic_speed'] == 'kurang' ? 'selected' : '' }} @endisset value="kurang"><</option>
+                                                    <option @isset($old['logic_speed']) {{ $old['logic_speed'] == 'lebih' ? 'selected' : '' }} @endisset value="lebih">></option>
+                                                </select>
+                                                <input class="form-control w-50" type="number" name="kecepatan" id="kecepatan" @isset($old['kecepatan']) value="{{ $old['kecepatan'] }}" @endisset>
+                                                <span class="input-group-text" for="">Km/h</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary">Terapkan</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-primary bubble-shadow-small">
+                                <i class="fas fa-truck-moving"></i>
+                            </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Total kendaraan</p>
+                                <h4 class="card-title">{{ number_format(array_sum(array_values($volume))) }}</h4>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 mt-sm-0 mt-4">
-                <div class="card card-stats card-round mb-0">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-icon">
-                                <div class="icon-big text-center icon-success bubble-shadow-small">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card card-stats card-round">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-icon">
+                            <div class="icon-big text-center icon-success bubble-shadow-small">
+                                <i class="fas fa-tachometer-alt"></i>
                             </div>
-                            <div class="col col-stats ms-3 ms-sm-0">
-                                <div class="numbers">
-                                    <p class="card-category">Rata2 Kecepatan</p>
-                                    <h4 class="card-title">{{ number_format($rata2, 2) }} Km/h</h4>
-                                </div>
+                        </div>
+                        <div class="col col-stats ms-3 ms-sm-0">
+                            <div class="numbers">
+                                <p class="card-category">Rata2 Kecepatan</p>
+                                <h4 class="card-title">{{ number_format($rata2, 2) }} Km/h</h4>
                             </div>
                         </div>
                     </div>
@@ -53,16 +132,6 @@
                 <div class="card-header">
                     <div class="card-head-row">
                         <div class="card-title">Volume Kendaraan</div>
-                        <div class="card-tools">
-                            <form action="{{ route('base') }}" method="get">
-                                <select name="period" id="" class="form-select form-control" onchange="this.form.submit()">
-                                    <option @selected($period == 'year') value="year">1 Tahun Terakhir</option>
-                                    <option @selected($period == 'month') value="month">30 Hari Terakhir</option>
-                                    <option @selected($period == 'week') value="week">7 Hari Terakhir</option>
-                                    <option @selected($period == 'today') value="today">Hari ini</option>
-                                </select>
-                            </form>
-                        </div>
                     </div>
                 </div>
                 <div class="card-body">
