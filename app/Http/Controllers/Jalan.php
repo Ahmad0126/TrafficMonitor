@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Jalan as JalanModel;
+use Inertia\Inertia;
 use Illuminate\Http\Request;
+use App\Models\Jalan as JalanModel;
+use App\Http\Resources\Jalan as JalanResource;
 
 class Jalan extends Controller
 {
@@ -11,6 +13,13 @@ class Jalan extends Controller
         $data['title'] = 'Daftar Ruas Jalan';
         $data['jalan'] = JalanModel::all();
         return view('jalan', $data);
+    }
+    public function show(){
+        $data['title'] = 'Daftar Ruas Jalan';
+        $data['jalan'] = new JalanResource(JalanModel::all());
+        $data['url_tambah'] = route('tambah_jalan');
+        $data['url_edit'] = route('edit_jalan');
+        return Inertia::render('Jalan', $data);
     }
     public function tambah_jalan(Request $req){
         $req->validate([
@@ -21,7 +30,7 @@ class Jalan extends Controller
         $jalan->ruas = $req->ruas;
         $jalan->save();
 
-        return redirect(route('jalan'))->with('alert', 'Berhasil menambah jalan');
+        return redirect()->back()->with('alert', 'Berhasil menambah jalan');
     }
     public function edit_jalan(Request $req){
         $req->validate([
@@ -33,6 +42,6 @@ class Jalan extends Controller
         $jalan->ruas = $req->ruas;
         $jalan->save();
 
-        return redirect(route('jalan'))->with('alert', 'Berhasil mengedit jalan');
+        return redirect()->back()->with('alert', 'Berhasil mengedit jalan');
     }
 }

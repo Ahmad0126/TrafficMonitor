@@ -61,7 +61,7 @@
 
 @php
 $url = explode('/', url()->current());
-if(count($url) == 4){ $url[4] = 'base'; }
+if(count($url) == 3 || (array_search('sistemdds', $url) && count($url) == 4)){ $url[4] = 'base'; }
 @endphp
 <body>
     <div class="wrapper">
@@ -90,7 +90,7 @@ if(count($url) == 4){ $url[4] = 'base'; }
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="sidebar-content">
                     <ul class="nav nav-secondary">
-                        <li class="nav-item @if($url[4] == 'base') active @endif">
+                        <li class="nav-item @if(array_search('base', $url)) active @endif">
                             <a href="{{ route('base') }}">
                                 <i class="fas fa-home"></i>
                                 <p>Dashboard</p>
@@ -102,19 +102,19 @@ if(count($url) == 4){ $url[4] = 'base'; }
                             </span>
                             <h4 class="text-section">Components</h4>
                         </li>
-                        <li class="nav-item @if($url[4] == 'traffic') active @endif">
+                        <li class="nav-item @if(array_search('traffic', $url)) active @endif">
                             <a href="{{ route('traffic') }}">
                                 <i class="fas fa-layer-group"></i>
                                 <p>Traffic</p>
                             </a>
                         </li>
-                        <li class="nav-item @if($url[4] == 'jalan') active @endif">
+                        <li class="nav-item @if(array_search('jalan', $url)) active @endif">
                             <a href="{{ route('jalan') }}">
                                 <i class="fas fa-road"></i>
                                 <p>Ruas Jalan</p>
                             </a>
                         </li>
-                        <li class="nav-item @if($url[4] == 'kendaraan') active @endif">
+                        <li class="nav-item @if(array_search('kendaraan', $url)) active @endif">
                             <a href="{{ route('kendaraan') }}">
                                 <i class="fas fa-truck-moving"></i>
                                 <p>Jenis Kendaraan</p>

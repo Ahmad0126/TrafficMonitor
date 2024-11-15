@@ -1,3 +1,5 @@
+import { Link } from "@inertiajs/react"
+
 export default function Paginator({links}){
     if(links){
         return <>
@@ -6,29 +8,29 @@ export default function Paginator({links}){
                     {links.map((data, i) => {
                         if(i == 0){
                             return <li key={i} className="paginate_button page-item previous">
-                                <a href={data.url} className="page-link">
+                                <Link href={data.url} className="page-link">
                                     Prev
-                                </a>
+                                </Link>
                             </li>
                         }else if(i == links.length - 1){
                             return <li key={i} className="paginate_button page-item next">
-                                <a href={data.url} className="page-link">
+                                <Link href={data.url} className="page-link">
                                     Next
-                                </a>
+                                </Link>
                             </li>
                         }else if(data.active){
                             return <li key={i} className="paginate_button page-item active">
-                                <a href="#" className="page-link">
+                                <Link href="#" className="page-link">
                                     { data.label }
-                                </a>
+                                </Link>
                             </li>
                         }else if(data.url == null){
                             return <li key={i} className="disabled" aria-disabled="true"><span>{ data.label }</span></li>
                         }else{
                             return <li key={i} className="paginate_button page-item">
-                                <a href={data.url} className="page-link">
+                                <Link href={data.url} className="page-link">
                                     { data.label }
-                                </a>
+                                </Link>
                             </li>
                         }
                     })}

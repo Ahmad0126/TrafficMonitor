@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\Traffic as TrafficResource;
+use Inertia\Inertia;
 use App\Models\Jalan;
 use App\Models\Kendaraan;
-use App\Models\Traffic as TrafficModel;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use App\Models\Traffic as TrafficModel;
+use App\Http\Resources\Jalan as JalanResource;
+use App\Http\Resources\Traffic as TrafficResource;
+use App\Http\Resources\Kendaraan as KendaraanResource;
 
 class Traffic extends Controller
 {
@@ -20,10 +23,11 @@ class Traffic extends Controller
     }
     public function show(){
         $data['title'] = 'Daftar Traffic';
-        $data['kendaraan'] = Kendaraan::all();
-        $data['jalan'] = Jalan::all();
+        $data['kendaraan'] = new KendaraanResource(Kendaraan::all());
+        $data['jalan'] = new JalanResource(Jalan::all());
         $data['traffic'] = new TrafficResource(TrafficModel::get_all());
-        return Inertia::render('Traffic/Traffic', $data);
+        $data['url_filter'] = route('filter_traffic2');
+        return Inertia::render('Traffic', $data);
     }
     public function filter(Request $req){
         $data['title'] = 'Daftar Traffic';
@@ -82,6 +86,68 @@ class Traffic extends Controller
         $data['traffic'] = $traffic->paginate(25)->appends($query);
         $data['old'] = $query;
         return view('traffic', $data);
+    }
+    public function filter2(Request $req){
+        $data['title'] = 'Daftar Traffic';
+        $data['kendaraan'] = new KendaraanResource(Kendaraan::all());
+        $data['jalan'] = new JalanResource(Jalan::all());
+        $data['traffic'] = new TrafficResource(TrafficModel::get_all());
+        $data['url_filter'] = route('filter_traffic2');
+        $traffic = TrafficModel::where([]);
+
+        if($req->id_ruas != null){
+            $req->validate(['id_ruas' => 'exists:ruas_jalan,id']);
+            $traffic->where('id_ruas', $req->id_ruas);
+        }
+        if($req->id_jenis != null){
+            $req->validate(['id_jenis' => 'exists:jenis_kendaraan,id']);
+            $traffic->where('id_jenis', $req->id_jenis);
+        }
+        if($req->tanggal1 != null AND $req->tanggal2 != null){
+            if(date('Y-m-d H:i:s', strtotime($req->tanggal2)) > date('Y-m-d H:i:s', strtotime($req->tanggal1)) AND date('Y-m-d H:i:s', strtotime($req->tanggal1)) < date('Y-m-d H:i:s')){
+                $traffic->where('tanggal', '>', $req->tanggal1);
+                $traffic->where('tanggal', '<', $req->tanggal2);
+            }
+        }
+        if($req->kecepatan != null AND $req->logic_speed != null){
+            switch ($req->logic_speed) {
+                case 'lebih': $p = '>='; break;
+                case 'kurang': $p = '<='; break;
+                default: $p = '='; break;
+            }
+            $traffic->where('kecepatan', $p, $req->kecepatan);
+        }
+        if($req->order != null){
+            switch ($req->order) {
+                case 'terlama':
+                    $traffic->orderBy('tanggal', 'ASC');
+                    break;
+                case 'tercepat':
+                    $traffic->orderBy('kecepatan', 'DESC');
+                    break;
+                case 'terlambat':
+                    $traffic->orderBy('kecepatan', 'ASC');
+                    break;
+                default:
+                    $traffic->orderBy('tanggal', 'DESC');
+                    break;
+            }
+        }
+        $traffic->join(DB::raw('jenis_kendaraan k'), 'traffic.id_jenis', '=', 'k.id')
+            ->join(DB::raw('ruas_jalan j'), 'traffic.id_ruas', '=', 'j.id');
+
+        $query = [
+            'id_jenis' => $req->id_jenis,
+            'id_ruas' => $req->id_ruas,
+            'tanggal1' => $req->tanggal1,
+            'tanggal2' => $req->tanggal2,
+            'logic_speed' => $req->logic_speed,
+            'kecepatan' => $req->kecepatan,
+            'order' => $req->order,
+        ];
+        $data['traffic'] = new TrafficResource($traffic->paginate(25)->appends($query));
+        $data['old'] = $query;
+        return Inertia::render('Traffic', $data);
     }
     public function graph(Request $req){
         $data['jenis'] = Kendaraan::all();
